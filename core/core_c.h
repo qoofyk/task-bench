@@ -32,39 +32,27 @@ typedef enum dependence_type_t {
   TREE,
   FFT,
   ALL_TO_ALL,
+  NEAREST,
+  SPREAD,
 } dependence_type_t;
 
 typedef enum kernel_type_t {
   EMPTY,
   BUSY_WAIT,
   MEMORY_BOUND,
+  COMPUTE_DGEMM,
   COMPUTE_BOUND,
+  COMPUTE_BOUND2,
   IO_BOUND,
-  LOAD_IMBALANCE
+  LOAD_IMBALANCE,
 } kernel_type_t;
-
-//-- add by Yuankun
-typedef struct kernel_arg_t{
-  const char **input_data;
-  long num_src_input;
-  size_t *input_bytes_per_src;
-
-  char *output_data;
-  size_t output_bytes;
-
-  long max_power; // compute kernel parameter
-  long jump;  // memeory kernel parameter
-
-  // TODO: Add parameters for load imbalance, etc
-} kernel_arg_t;
-//-- add by Yuankun
 
 typedef struct kernel_t {
   kernel_type_t type;
   long iterations;
-  
-  //-- add by Yuankun
-  kernel_arg_t kernel_arg;
+
+  long max_power; // compute kernel parameter
+  long jump;      // memory kernel parameter
 } kernel_t;
 
 void kernel_execute(kernel_t kernel);
@@ -87,8 +75,10 @@ typedef struct task_graph_t {
   long timesteps;
   long max_width;
   dependence_type_t dependence;
+  long radix; // parameter to nearest/spread dependence types
   kernel_t kernel;
   size_t output_bytes_per_task;
+  size_t scratch_bytes_per_task;
 } task_graph_t;
 
 long task_graph_offset_at_timestep(task_graph_t graph, long timestep);
