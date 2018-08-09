@@ -292,7 +292,7 @@ void OmpSs::insert_task(std::vector<task_args_t> args, payload_t payload, size_t
   switch(num_args) {
   case 1:
   {
-#pragma omp task depend(inout: mat[y0 * matrix[graph_id].N + x0])
+#pragma omp task inout(mat[y0 * matrix[graph_id].N + x0])
       task1(&mat[y0 * matrix[graph_id].N + x0], payload);
     break;
   }
@@ -301,7 +301,7 @@ void OmpSs::insert_task(std::vector<task_args_t> args, payload_t payload, size_t
   {
     int x1 = args[1].x;
     int y1 = args[1].y;
-#pragma omp task depend(in: mat[y1 * matrix[graph_id].N + x1]) depend(inout: mat[y0 * matrix[graph_id].N + x0])
+#pragma omp task in(mat[y1 * matrix[graph_id].N + x1]) inout(mat[y0 * matrix[graph_id].N + x0])
       task2(&mat[y0 * matrix[graph_id].N + x0], 
             &mat[y1 * matrix[graph_id].N + x1], payload);
     break;
@@ -313,7 +313,7 @@ void OmpSs::insert_task(std::vector<task_args_t> args, payload_t payload, size_t
     int y1 = args[1].y;
     int x2 = args[2].x;
     int y2 = args[2].y;
-#pragma omp task depend(in: mat[y1 * matrix[graph_id].N + x1]) depend(in: mat[y2 * matrix[graph_id].N + x2]) depend(inout: mat[y0 * matrix[graph_id].N + x0])
+#pragma omp task in(mat[y1 * matrix[graph_id].N + x1], mat[y2 * matrix[graph_id].N + x2]) inout(mat[y0 * matrix[graph_id].N + x0])
       task3(&mat[y0 * matrix[graph_id].N + x0], 
             &mat[y1 * matrix[graph_id].N + x1], 
             &mat[y2 * matrix[graph_id].N + x2], payload);
@@ -328,7 +328,7 @@ void OmpSs::insert_task(std::vector<task_args_t> args, payload_t payload, size_t
     int y2 = args[2].y;
     int x3 = args[3].x;
     int y3 = args[3].y;
-#pragma omp task depend(in: mat[y1 * matrix[graph_id].N + x1]) depend(in: mat[y2 * matrix[graph_id].N + x2]) depend(in: mat[y3 * matrix[graph_id].N + x3]) depend(inout: mat[y0 * matrix[graph_id].N + x0])
+#pragma omp task in(mat[y1 * matrix[graph_id].N + x1], mat[y2 * matrix[graph_id].N + x2], mat[y3 * matrix[graph_id].N + x3]) inout(mat[y0 * matrix[graph_id].N + x0])
       task4(&mat[y0 * matrix[graph_id].N + x0], 
             &mat[y1 * matrix[graph_id].N + x1], 
             &mat[y2 * matrix[graph_id].N + x2], 
