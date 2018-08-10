@@ -34,6 +34,7 @@ void Kernel::execute() const
 
 void Kernel::execute(char *scratch_ptr, size_t scratch_bytes) const
 {
+#if 0
   switch(type) {
   case KernelType::EMPTY:
     execute_kernel_empty(*this);
@@ -66,6 +67,7 @@ void Kernel::execute(char *scratch_ptr, size_t scratch_bytes) const
   default:
     assert(false && "unimplemented kernel type");
   };
+#endif
 }
 
 static const std::map<std::string, KernelType> &ktype_by_name()

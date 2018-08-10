@@ -1,6 +1,6 @@
 DEBUG ?= 0
 
-CXX = mcxx
+MCXX = mcxx
 
 CXXFLAGS = --ompss -std=c++11 -Wall -Wno-unused -mcmodel=large
 LDFLAGS  = --ompss -std=c++11 -Wall -Wno-unused -mcmodel=large
@@ -31,17 +31,11 @@ all: $(TARGET)
 
 .PRECIOUS: %.cc %.o
 
-core.o: ../core/core.cc ../core/core.h ../core/core_kernel.h
-	$(CXX) $(CXXFLAGS) $<
-
-core_kernel.o: ../core/core_kernel.cc ../core/core_kernel.h
-	$(CXX) $(CXXFLAGS) $<
-
 main.o: main.cc ../core/timer.h
-	$(CXX) $(CXXFLAGS) $<
+	$(MCXX) $(CXXFLAGS) -c $<
 
-main: main.o core.o core_kernel.o
-	$(CXX) $^ $(LIB) $(LDFLAGS) -o $@ 
+main: main.o ../core/libcore.a
+	$(MCXX) $^ $(LIB) $(LDFLAGS) -o $@ 
 
 
 clean:
