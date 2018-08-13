@@ -100,3 +100,20 @@ if [[ $USE_OPENMP -eq 1 ]]; then
     make -C openmp clean
     make -C openmp -j$THREADS
 fi
+
+if [[ $USE_OMPSS -eq 1 ]]; then
+    pushd "$OMPSS_DIR"
+    mkdir -p "$NANOS_BUILD"
+    pushd "$NANOS_SRC_DIR"
+    ./configure --prefix=$NANOS_BUILD
+    make -j$THREADS
+    make install
+    popd
+    mkdir -p "$MERCURIUM_BUILD"
+    pushd "$MERCURIUM_SRC_DIR"
+    ./configure --prefix=$MERCURIUM_BUILD --enable-ompss --with-nanox=$NANOS_BUILD
+    make -j$THREADS
+    make install
+    make -C ompss clean
+    make -C ompss -j$THREADS
+fi

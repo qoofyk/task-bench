@@ -10,6 +10,7 @@ USE_STARPU=${USE_STARPU:-1}
 USE_PARSEC=${USE_PARSEC:-1}
 USE_CHARM=${USE_CHARM:-1}
 USE_OPENMP=${USE_OPENMP:-1}
+USE_OMPSS=${USE_OMPSS:-1}
 
 if [[ -e deps ]]; then
     echo "The directory deps already exists, nothing to do."
@@ -109,4 +110,19 @@ if [[ $USE_OPENMP -eq 1 ]]; then
 export USE_OPENMP=$USE_OPENMP
 EOF
     source deps/env.sh
+fi
+
+if [[ $USE_OMPSS -eq 1 ]]; then
+    export OMPSS_DL_DIR="$PWD"/deps/ompss
+    cat >>deps/env.sh <<EOF
+export USE_OMPSS=$USE_OMPSS
+export NANOS_SRC_DIR=$OMP_DL_DIR/nanox-0.14.1
+export NANOS_BUILD=$OMP_DL_DIR/nanos
+export MERCURIUM_SRC_DIR=$OMP_DL_DIR/mcxx-2.1.0
+export MERCURIUM_BUILD=$OMP_DL_DIR/mercurium
+EOF
+    wget https://pm.bsc.es/sites/default/files/ftp/ompss/releases/ompss-17.12.1.tar.gz
+    mkdir -p "$OMPSS_DL_DIR"
+    tar -zxf ompss-17.12.1.tar.gz -C "$OMPSS_DL_DIR" --strip-components 1
+    rm -rf ompss-17.12.1.tar.gz
 fi
