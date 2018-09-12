@@ -29,10 +29,11 @@
 
 void Kernel::execute() const
 {
-  Kernel::execute(NULL, 0);
+  Kernel::execute(-1, -1, NULL, 0);
 }
 
-void Kernel::execute(char *scratch_ptr, size_t scratch_bytes) const
+void Kernel::execute(long timestep, long point,
+                     char *scratch_ptr, size_t scratch_bytes) const
 {
   switch(type) {
   case KernelType::EMPTY:
@@ -61,7 +62,8 @@ void Kernel::execute(char *scratch_ptr, size_t scratch_bytes) const
     execute_kernel_io(*this);
     break;
   case KernelType::LOAD_IMBALANCE:
-    execute_kernel_imbalance(*this);
+    assert(timestep >= 0 && point >= 0);
+    execute_kernel_imbalance(*this, timestep, point);
     break;
   default:
     assert(false && "unimplemented kernel type");
@@ -417,7 +419,7 @@ void TaskGraph::execute_point(long timestep, long point,
 
   // Execute kernel
   Kernel k(kernel);
-  k.execute(scratch_ptr, scratch_bytes);
+  k.execute(timestep, point, scratch_ptr, scratch_bytes);
 }
 
 static TaskGraph default_graph()
@@ -428,7 +430,7 @@ static TaskGraph default_graph()
   graph.max_width = 4;
   graph.dependence = DependenceType::TRIVIAL;
   graph.radix = 2;
-  graph.kernel = {KernelType::EMPTY, 0, 0, 0};
+  graph.kernel = {KernelType::EMPTY, 0, 0};
   graph.output_bytes_per_task = sizeof(std::pair<long, long>);
   graph.scratch_bytes_per_task = 0;
 
@@ -525,16 +527,6 @@ App::App(int argc, char **argv)
         abort();
       }
       graph.scratch_bytes_per_task = value;
-    }
-
-    if (!strcmp(argv[i], "-max_power")) {
-      needs_argument(i, argc, "-max_power");
-      long value  = atol(argv[++i]);
-      if (value < 0) {
-        fprintf(stderr, "error: Invalid flag \"-max_power %ld\" must be >= 0\n", value);
-        abort();
-      }
-      graph.kernel.max_power = value;
     }
 
     if (!strcmp(argv[i], "-jump")) {
@@ -639,7 +631,7 @@ void App::display() const
 }
 
 // IMPORTANT: Keep this up-to-date with kernel implementations
-static long long flops_per_task(const TaskGraph &g)
+long long flops_per_task(const TaskGraph &g)
 {
   switch(g.kernel.type) {
   case KernelType::EMPTY:
@@ -650,11 +642,11 @@ static long long flops_per_task(const TaskGraph &g)
   case KernelType::COMPUTE_DGEMM:
   {
     long N = sqrt(g.scratch_bytes_per_task / (3 * sizeof(double))); 
-    return 2 * pow(N, 3) * g.kernel.iterations;
+    return 2 * N * N * N * g.kernel.iterations;
   }
 
   case KernelType::COMPUTE_BOUND:
-    return 2 * g.kernel.max_power * 32 * g.kernel.iterations;
+    return 2 * 64 * g.kernel.iterations + 64;
 
   case KernelType::COMPUTE_BOUND2:
     return 2 * 32 * g.kernel.iterations;
@@ -668,7 +660,7 @@ static long long flops_per_task(const TaskGraph &g)
 }
 
 // IMPORTANT: Keep this up-to-date with kernel implementations
-static long long bytes_per_task(const TaskGraph &g)
+long long bytes_per_task(const TaskGraph &g)
 {
   switch(g.kernel.type) {
   case KernelType::EMPTY:
