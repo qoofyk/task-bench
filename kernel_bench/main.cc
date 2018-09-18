@@ -56,6 +56,8 @@ void *execute_task(void *tr)
   
   Kernel k(task_arg->graph.kernel);
   
+  assert(task_arg->thread_buff != NULL);
+  
   // warm up
   for (int i = 0; i < 10; i++) {
     k.execute(0, 0, task_arg->thread_buff, task_arg->graph.scratch_bytes_per_task);
@@ -128,7 +130,8 @@ KernelBenchApp::KernelBenchApp(int argc, char **argv)
   
   for (i = 0; i < nb_workers; i++) {
     if (graph.scratch_bytes_per_task > 0) {
-      local_buff[i] = (char*)malloc(sizeof(char) * graph.scratch_bytes_per_task);
+      local_buff[i] = (char*)malloc(sizeof(char) * graph.scratch_bytes_per_task * 2);
+      local_buff[i] += 1;
       assert(local_buff[i] != nullptr);
     } else {
       local_buff[i] = nullptr;
@@ -157,7 +160,7 @@ KernelBenchApp::~KernelBenchApp()
 {
   if (local_buff != nullptr) {
     for (int i = 0; i < nb_workers; i++) {
-      free(local_buff[i]);
+    //  free(local_buff[i]);
       local_buff[i] = nullptr;
     }
     local_buff = nullptr;
