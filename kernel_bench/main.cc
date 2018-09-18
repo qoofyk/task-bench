@@ -67,7 +67,8 @@ void *execute_task(void *tr)
   
   *(task_arg->time_start) = Timer::get_cur_time();
   for (int i = 0; i < task_arg->nb_tasks; i++) {
-    k.execute(i, task_arg->tid, task_arg->thread_buff, task_arg->graph.scratch_bytes_per_task);
+    char *memory_buff = task_arg->thread_buff + (i*2) % 32;
+    k.execute(i, task_arg->tid, memory_buff, task_arg->graph.scratch_bytes_per_task);
   }
   *(task_arg->time_end) = Timer::get_cur_time();
   
@@ -131,7 +132,7 @@ KernelBenchApp::KernelBenchApp(int argc, char **argv)
   for (i = 0; i < nb_workers; i++) {
     if (graph.scratch_bytes_per_task > 0) {
       local_buff[i] = (char*)malloc(sizeof(char) * graph.scratch_bytes_per_task * 2);
-      local_buff[i] += 1;
+      printf("malloc %ld\n", (intptr_t)local_buff[i]);
       assert(local_buff[i] != nullptr);
     } else {
       local_buff[i] = nullptr;
@@ -160,7 +161,7 @@ KernelBenchApp::~KernelBenchApp()
 {
   if (local_buff != nullptr) {
     for (int i = 0; i < nb_workers; i++) {
-    //  free(local_buff[i]);
+      free(local_buff[i]);
       local_buff[i] = nullptr;
     }
     local_buff = nullptr;
