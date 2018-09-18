@@ -67,7 +67,8 @@ void *execute_task(void *tr)
   
   *(task_arg->time_start) = Timer::get_cur_time();
   for (int i = 0; i < task_arg->nb_tasks; i++) {
-    char *memory_buff = task_arg->thread_buff + (i*2) % 32;
+   // char *memory_buff = task_arg->thread_buff + (i*2) % 32;
+    char *memory_buff = task_arg->thread_buff;
     k.execute(i, task_arg->tid, memory_buff, task_arg->graph.scratch_bytes_per_task);
   }
   *(task_arg->time_end) = Timer::get_cur_time();
