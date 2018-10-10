@@ -47,7 +47,7 @@ void Kernel::execute(long graph_index, long timestep, long point,
   case KernelType::MEMORY_BOUND:
     assert(scratch_ptr != NULL);
     assert(scratch_bytes > 0);
-    execute_kernel_memory(*this, scratch_ptr, scratch_bytes, timestep, sample);
+    execute_kernel_memory(*this, scratch_ptr, scratch_bytes, timestep);
     break;
   case KernelType::COMPUTE_DGEMM:
     assert(scratch_ptr != NULL);
@@ -57,7 +57,7 @@ void Kernel::execute(long graph_index, long timestep, long point,
   case KernelType::MEMORY_DAXPY:
     assert(scratch_ptr != NULL);
     assert(scratch_bytes > 0);
-    execute_kernel_daxpy(*this, scratch_ptr, scratch_bytes, timestep, sample);
+    execute_kernel_daxpy(*this, scratch_ptr, scratch_bytes, timestep);
     break;  
   case KernelType::COMPUTE_BOUND:
     execute_kernel_compute(*this);
@@ -148,6 +148,10 @@ static const std::map<DependenceType, std::string> &name_by_dtype()
 
 long TaskGraph::offset_at_timestep(long timestep) const
 {
+  if (timestep < 0) {
+    return 0;
+  }
+
   switch (dependence) {
   case DependenceType::TRIVIAL:
   case DependenceType::NO_COMM:
@@ -171,6 +175,10 @@ long TaskGraph::offset_at_timestep(long timestep) const
 
 long TaskGraph::width_at_timestep(long timestep) const
 {
+  if (timestep < 0) {
+    return 0;
+  }
+
   switch (dependence) {
   case DependenceType::TRIVIAL:
   case DependenceType::NO_COMM:
@@ -455,8 +463,8 @@ void TaskGraph::execute_point(long timestep, long point,
   long width = width_at_timestep(timestep);
   assert(offset <= point && point < offset+width);
 
-  long last_offset = timestep > 0 ? offset_at_timestep(timestep-1) : 0;
-  long last_width = timestep > 0 ? width_at_timestep(timestep-1) : 0;
+  long last_offset = offset_at_timestep(timestep-1);
+  long last_width = width_at_timestep(timestep-1);
 
   // Validate input
   {
@@ -654,10 +662,10 @@ App::App(int argc, char **argv)
       needs_argument(i, argc, "-sample");
       int value  = atoi(argv[++i]);
       if (value < 0) {
-        fprintf(stderr, "error: Invalid flag \"-sample %ld\" must be >= 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-sample %d\" must be >= 0\n", value);
         abort();
       }
-      graph.kernel.sample = value;
+      graph.kernel.samples = value;
     }
 
     if (!strcmp(argv[i], "-and")) {
@@ -821,10 +829,10 @@ long long bytes_per_task(const TaskGraph &g)
     return 0;
 
   case KernelType::MEMORY_BOUND:
-    return g.scratch_bytes_per_task * g.kernel.iterations / g.kernel.sample;
+    return g.scratch_bytes_per_task * g.kernel.iterations / g.kernel.samples;
 
   case KernelType::MEMORY_DAXPY:
-    return g.scratch_bytes_per_task * g.kernel.iterations / g.kernel.sample;
+    return g.scratch_bytes_per_task * g.kernel.iterations / g.kernel.samples;
 
   case KernelType::COMPUTE_DGEMM:
   case KernelType::COMPUTE_BOUND:

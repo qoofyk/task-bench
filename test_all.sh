@@ -24,8 +24,10 @@ compute_kernels=("" "$compute_bound" "$imbalanced")
 set -x
 
 if [[ $TASKBENCH_USE_MPI -eq 1 ]]; then
-    for t in no_comm stencil_1d stencil_1d_periodic dom tree nearest all_to_all; do # FIXME: trivial fft random_nearest are broken
+    for t in $extended_types; do
         for k in "${kernels[@]}"; do
+            mpirun -np 1 ./mpi/nonblock -steps 9 -type $t $k
+            mpirun -np 2 ./mpi/nonblock -steps 9 -type $t $k
             mpirun -np 4 ./mpi/nonblock -steps 9 -type $t $k
             mpirun -np 4 ./mpi/nonblock -steps 9 -type $t $k -and -steps 9 -type $t $k
         done
@@ -52,7 +54,14 @@ fi
 if [[ $USE_REALM -eq 1 ]]; then
     for t in $extended_types; do
         for k in "${kernels[@]}"; do
+            ./realm/task_bench -steps 9 -type $t $k -ll:cpu 1
             ./realm/task_bench -steps 9 -type $t $k -ll:cpu 2
+            ./realm/task_bench -steps 9 -type $t $k -ll:cpu 4
+            if [[ $USE_GASNET -eq 1 ]]; then
+                mpirun -np 2 ./realm/task_bench -steps 9 -type $t $k -ll:cpu 1
+                mpirun -np 2 ./realm/task_bench -steps 9 -type $t $k -ll:cpu 2
+                mpirun -np 4 ./realm/task_bench -steps 9 -type $t $k -ll:cpu 1
+            fi
             ./realm/task_bench -steps 9 -type $t $k -and -steps 9 -type $t $k -ll:cpu 2
         done
     done
@@ -105,11 +114,10 @@ if [[ $USE_CHARM -eq 1 ]]; then
 fi
 
 if [[ $USE_CHAPEL -eq 1 ]]; then
-    for t in stencil_1d nearest all_to_all; do # FIXME: trivial no_comm stencil_1d_periodic dom tree fft
+    for t in $extended_types; do
         for k in "${kernels[@]}"; do
             ./chapel/task_benchmark -- -steps 9 -type $t $k
-            # FIXME: Chapel can't run multiple task graphs
-            # ./chapel/task_benchmark -- -steps 9 -type $t $k -and -steps 9 -type $t $k
+            ./chapel/task_benchmark -- -steps 9 -type $t $k -and -steps 9 -type $t $k
         done
     done
 fi
