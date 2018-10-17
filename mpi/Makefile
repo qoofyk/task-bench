@@ -6,7 +6,6 @@ CXXFLAGS ?=
 CXXFLAGS += -std=c++11 -I../core
 
 LDFLAGS ?=
-# FIXME: Would prefer static linking, but some MPI implementations don't support it.
 LDFLAGS += -L../core -lcore_s
 
 ifeq ($(strip $(DEBUG)),0)
@@ -19,7 +18,7 @@ include ../core/make_blas.mk
 
 all: nonblock basic bcast alltoall buffered_send
 
-alltoall: alltoallv.cc
+alltoall: alltoall.cc
 	$(MPICXX) -o $@ $(CXXFLAGS) $< $(LDFLAGS)
 
 basic: basic.cc
@@ -31,7 +30,7 @@ bcast: bcast.cc
 buffered_send: buffered_send.cc
 	$(MPICXX) -o $@ $(CXXFLAGS) $< $(LDFLAGS)
 
-nonblock: nonblocking.cc
+nonblock: nonblock.cc
 	$(MPICXX) -o $@ $(CXXFLAGS) $< $(LDFLAGS)
 
 clean:
