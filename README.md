@@ -1,5 +1,26 @@
 # A Task Benchmark [![Build Status](https://travis-ci.org/StanfordLegion/task-bench.svg?branch=master)](https://travis-ci.org/StanfordLegion/task-bench)
 
+**Please contact the authors before publishing any results obtained
+with Task Bench.**
+
+Corresponding authors:
+
+  * Elliott Slaughter <slaughter@cs.stanford.edu>
+  * Wei Wu <wwu@lanl.gov>
+
+Task Bench is a configurable benchmark for evaluating the efficiency
+and performance of parallel and distributed programming models,
+runtimes, and languages. It is primarily intended for evaluating
+task-based models, in which the basic unit of execution is a task, but
+it can be implemented in any parallel system. The benchmark consists
+of a configurable task graph (which can be thought of as an iteration
+space with tasks at every point), with configurable dependencies
+between tasks. Tasks execute a configurable set of kernels, which
+allow the execution to be compute-bound, memory-bound,
+communication-bound, or runtime overhead-bound (with empty tasks).
+
+The following configurations are currently supported:
+
 Implementations:
 [Charm++](charm++),
 [Chapel](chapel),
@@ -13,7 +34,26 @@ Implementations:
 [Spark](spark),
 [StarPU](starpu),
 [Swift/T](swift),
-[TensorFlow](tensorflow)
+[TensorFlow](tensorflow),
+[X10](x10)
+
+Dependence patterns:
+trivial,
+no_comm,
+stencil_1d,
+stencil_1d_periodic,
+dom,
+tree,
+fft,
+all_to_all,
+nearest,
+random_nearest
+
+Kernels:
+compute-bound,
+memory-bound,
+load-imbalanced compute-bound,
+empty
 
 ## Quickstart
 
@@ -47,53 +87,7 @@ And different kernels can be plugged in to the execution:
 ./legion/task_bench -kernel load_imbalance -iter 1024
 ```
 
-## Instructions for Specific Machines
+## Experimental Configuration
 
-### Cori
-
-Place the following into `~/.bashrc.ext`:
-
-```
-module unload PrgEnv-intel
-module load PrgEnv-gnu
-module load python/3.6-anaconda-4.4
-module load cmake
-module load pcre
-export CC=cc
-export CXX=CC
-export MPICXX=CC
-```
-
-Then run:
-
-```
-git clone https://github.com/StanfordLegion/task-bench.git
-cd task-bench
-USE_GASNET=1 CONDUIT=aries CHPL_COMM=ugni CHARM_VERSION=gni-crayxc ./get_deps.sh
-./build_all.sh
-cd scripts/cori
-sbatch --nodes 1 emtg_legion.sh
-```
-
-### Sherlock
-
-Place the following into `~/.bashrc`:
-
-```
-module load cmake/3.8.1
-module load gcc/6.3.0
-module load openmpi/2.1.1
-module load python/3.6.1
-module load pcre
-```
-
-Then run:
-
-```
-git clone https://github.com/StanfordLegion/task-bench.git
-cd task-bench
-CONDUIT=ibv USE_GASNET=1 CHARM_VERSION=verbs-linux-x86_64 ./get_deps.sh
-sbatch ./scripts/sherlock/build.sh
-cd scripts/sherlock
-sbatch --nodes 1 emtg_legion.sh
-```
+For detailed instructions on configuring task bench for performance
+experiments, see [EXPERIMENT.md](EXPERIMENT.md).

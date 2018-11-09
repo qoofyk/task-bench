@@ -162,6 +162,25 @@ fi)
     make -C chapel
 fi)
 
+(if [[ $USE_X10 -eq 1 ]]; then
+    source "$X10_DIR"/env.sh
+
+    ANT_FLAGS=("-DX10RT_MPI=true")
+    if [[ ${DEBUG:-0} -eq 0 ]]; then
+        ANT_FLAGS+=("-Doptimize=true" "-DNO_CHECKS=true")
+    fi
+    if [[ -n $CRAYPE_VERSION ]]; then
+        ANT_FLAGS+=("-DCROSS_COMPILE_MODULES=true")
+    fi
+
+    pushd "$X10_DIR"/x10/x10.dist
+    ant "${ANT_FLAGS[@]}" dist # squeakyclean dist
+    popd
+
+    make -C x10 clean
+    make -C x10
+fi)
+
 if [[ $USE_OPENMP -eq 1 ]]; then
     make -C openmp clean
     make -C openmp -j$THREADS
