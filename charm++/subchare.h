@@ -1,4 +1,4 @@
-/* Copyright 2018 Stanford University
+/* Copyright 2019 Stanford University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,15 +31,15 @@ class Subchare : public CBase_Subchare {
   std::vector<std::set<long> > notReceived;
   std::vector<std::set<long> > whereToSend;
   std::map<std::pair<long, long>, long> receivingMap;
-  std::vector<std::vector<std::pair<long, long>*> > inputs;
+  std::vector<std::vector<std::vector<char> > > inputs;
+  std::vector<std::vector<char *> > input_ptrs;
   std::vector<std::vector<size_t> > input_bytes;
-  std::pair<long, long> output;
-  size_t output_bytes;
+  std::vector<char> output;
+  std::vector<char> scratch;
   bool sent;
   bool firstTime;
   App app;
   TaskGraph graph;
-  CkMulticastMgr *mcastMgr;
   CkSectionInfo sid;
 
   void checkAndRun(bool receiving);
@@ -47,15 +47,14 @@ class Subchare : public CBase_Subchare {
  public:
 
   /// Constructors ///
-  Subchare(VectorWrapper wrapper, int graphIndex, CkGroupID mcastMgrGID);
+  Subchare(VectorWrapper wrapper, int graphIndex);
 
   /// Entry Methods ///
   void initGraph(MulticastMsg* msg);
   void runTimestep(MulticastMsg* msg);
-  void receive(const std::pair<long, long>& input);
+  void receive(const std::vector<char> &input);
   void reset(MulticastMsg* msg);
 
 };
-
 
 #endif

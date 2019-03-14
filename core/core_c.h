@@ -1,4 +1,4 @@
-/* Copyright 2018 Stanford University
+/* Copyright 2019 Stanford University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,6 +35,8 @@ typedef enum dependence_type_t {
   ALL_TO_ALL,
   NEAREST,
   SPREAD,
+  RANDOM_NEAREST,
+  RANDOM_SPREAD,
 } dependence_type_t;
 
 typedef enum kernel_type_t {
@@ -41,6 +44,7 @@ typedef enum kernel_type_t {
   BUSY_WAIT,
   MEMORY_BOUND,
   COMPUTE_DGEMM,
+  MEMORY_DAXPY,
   COMPUTE_BOUND,
   COMPUTE_BOUND2,
   IO_BOUND,
@@ -50,10 +54,9 @@ typedef enum kernel_type_t {
 typedef struct kernel_t {
   kernel_type_t type;
   long iterations;
-  long jump;      // memory kernel parameter
+  int samples;
+  double imbalance; // amount of imbalance as a fraction of the number of iterations
 } kernel_t;
-
-void kernel_execute(kernel_t kernel);
 
 typedef struct interval_t {
   // represents the INCLUSIVE interval from start to end
@@ -70,13 +73,17 @@ long interval_list_num_intervals(interval_list_t intervals);
 interval_t interval_list_interval(interval_list_t intervals, long index);
 
 typedef struct task_graph_t {
+  long graph_index;
   long timesteps;
   long max_width;
   dependence_type_t dependence;
-  long radix; // parameter to nearest/spread dependence types
+  long radix; // max number of dependencies in nearest/spread/random patterns
+  long period; // period of repetition in spread/random pattern
+  double fraction_connected; // fraction of connected nodes in random pattern
   kernel_t kernel;
   size_t output_bytes_per_task;
   size_t scratch_bytes_per_task;
+  int nb_fields;
 } task_graph_t;
 
 long task_graph_offset_at_timestep(task_graph_t graph, long timestep);
@@ -98,9 +105,14 @@ void task_graph_execute_point_scratch(task_graph_t graph, long timestep, long po
 
 // FIXME: input_ptr should be const, but this breaks Chapel
 void task_graph_execute_point_nonconst(task_graph_t graph, long timestep, long point,
-                                       char *output_ptr, size_t output_bytes,
-                                       char **input_ptr, const size_t *input_bytes,
+                                       int64_t *output_ptr, size_t output_bytes,
+                                       int64_t **input_ptr, const size_t *input_bytes,
                                        size_t n_inputs);
+void task_graph_execute_point_scratch_nonconst(task_graph_t graph, long timestep, long point,
+                                               int64_t *output_ptr, size_t output_bytes,
+                                               int64_t **input_ptr, const size_t *input_bytes,
+                                               size_t n_inputs,
+                                               char *scratch_ptr, size_t scratch_bytes);
 
 typedef struct task_graph_list_t {
   void *impl;

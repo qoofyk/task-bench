@@ -1,4 +1,4 @@
-/* Copyright 2018 Stanford University
+/* Copyright 2019 Stanford University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,12 +56,6 @@ App * unwrap(app_t a) {
   return reinterpret_cast<App *>(a.impl);
 }
 
-void kernel_execute(kernel_t kernel)
-{
-  Kernel k(kernel);
-  k.execute();
-}
-
 long task_graph_offset_at_timestep(task_graph_t graph, long timestep)
 {
   TaskGraph t(graph);
@@ -111,7 +105,8 @@ void task_graph_execute_point(task_graph_t graph, long timestep, long point,
 {
   TaskGraph t(graph);
   t.execute_point(timestep, point, output_ptr, output_bytes,
-                  input_ptr, input_bytes, n_inputs);
+                  input_ptr, input_bytes, n_inputs,
+                  NULL, 0);
 }
 
 void task_graph_execute_point_scratch(task_graph_t graph, long timestep, long point,
@@ -127,14 +122,28 @@ void task_graph_execute_point_scratch(task_graph_t graph, long timestep, long po
 }
 
 void task_graph_execute_point_nonconst(task_graph_t graph, long timestep, long point,
-                                       char *output_ptr, size_t output_bytes,
-                                       char **input_ptr, const size_t *input_bytes,
+                                       int64_t *output_ptr, size_t output_bytes,
+                                       int64_t **input_ptr, const size_t *input_bytes,
                                        size_t n_inputs)
 {
   TaskGraph t(graph);
-  t.execute_point(timestep, point, output_ptr, output_bytes,
-                  const_cast<const char **>(input_ptr),
-                  input_bytes, n_inputs);
+  t.execute_point(timestep, point, reinterpret_cast<char *>(output_ptr), output_bytes,
+                  reinterpret_cast<const char **>(const_cast<const int64_t **>(input_ptr)),
+                  input_bytes, n_inputs,
+                  NULL, 0);
+}
+
+void task_graph_execute_point_scratch_nonconst(task_graph_t graph, long timestep, long point,
+                                               int64_t *output_ptr, size_t output_bytes,
+                                               int64_t **input_ptr, const size_t *input_bytes,
+                                               size_t n_inputs,
+                                               char *scratch_ptr, size_t scratch_bytes)
+{
+  TaskGraph t(graph);
+  t.execute_point(timestep, point, reinterpret_cast<char *>(output_ptr), output_bytes,
+                  reinterpret_cast<const char **>(const_cast<const int64_t **>(input_ptr)),
+                  input_bytes, n_inputs,
+                  scratch_ptr, scratch_bytes);
 }
 
 void interval_list_destroy(interval_list_t intervals)

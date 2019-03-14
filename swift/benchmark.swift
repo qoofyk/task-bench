@@ -1,4 +1,4 @@
-/* Copyright 2018 Stanford University
+/* Copyright 2019 Stanford University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -294,14 +294,28 @@ type pair {
 
   (maxWidths, numTimesteps) = getGraphInfo(lists[0]);
 
-  // Run the benchmark.
-  wait deep (lists, locations, dependencies, reverseDependencies, inputMemory, inputBytes, numInputs, maxWidths, numTimesteps) {
-    float start = clock() =>
-    boolean finished[] = runBenchmark(lists, locations, dependencies, reverseDependencies, inputMemory, inputBytes, numInputs, maxWidths, numTimesteps);
-    wait deep (finished) {
-      float end = clock();
-      location L = locationFromRank(0);
-      @location=L reportTiming(apps[0], end - start);
+  // First iteration is for warmup.
+  boolean finishedIter[];
+  for (int i = 0; i < 2; i = i + 1) {
+    boolean startIter;
+    if (i == 0) {
+      startIter = true;
+    } else {
+      startIter = finishedIter[i-1];
+    }
+
+    // Run the benchmark.
+    wait deep (startIter, lists, locations, dependencies, reverseDependencies, inputMemory, inputBytes, numInputs, maxWidths, numTimesteps) {
+      float start = clock() =>
+      boolean finished[] = runBenchmark(lists, locations, dependencies, reverseDependencies, inputMemory, inputBytes, numInputs, maxWidths, numTimesteps);
+      wait deep (finished) {
+        float end = clock() =>
+        if (i == 1) {
+          location L = locationFromRank(0);
+          @location=L reportTiming(apps[0], end - start);
+        }
+        finishedIter[i] = true;
+      }
     }
   }
 }
